@@ -1,0 +1,7 @@
+{
+  "name": "ProductBuddy AI",
+  "description": "An intelligent generator for Product Requirements Documents (PRDs) and corresponding technical tasks. Users complete a comprehensive form, and the AI assistant generates a detailed PRD and an actionable task list tailored to their project.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
