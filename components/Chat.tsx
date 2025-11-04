@@ -97,13 +97,25 @@ interface ChatProps {
   productName: string;
   mainObjective: string;
   team: string;
+  prdSectionData: PrdSectionData;
+  setPrdSectionData: React.Dispatch<React.SetStateAction<PrdSectionData>>;
+  currentSectionIndex: number;
+  setCurrentSectionIndex: React.Dispatch<React.SetStateAction<number>>;
+  extractedSections: Set<string>;
+  setExtractedSections: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 const Chat: React.FC<ChatProps> = ({ 
   onPrdGenerationComplete,
   productName,
   mainObjective,
-  team 
+  team,
+  prdSectionData: prdSectionDataProp,
+  setPrdSectionData: setPrdSectionDataProp,
+  currentSectionIndex: currentSectionIndexProp,
+  setCurrentSectionIndex: setCurrentSectionIndexProp,
+  extractedSections: extractedSectionsProp,
+  setExtractedSections: setExtractedSectionsProp
 }) => {
   // Array de seções em ordem (do systemInstruction)
   const SECTION_NAMES: (keyof PrdSectionData)[] = [
@@ -129,26 +141,14 @@ const Chat: React.FC<ChatProps> = ({
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [recordingError, setRecordingError] = useState<string>('');
   const [isChatReady, setIsChatReady] = useState(false);
-
-  // [NOVO] Estado para rastrear qual seção está sendo discutida
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-
-  // [NOVO] Estado para acumular dados de seções
-  const [prdSectionData, setPrdSectionData] = useState<PrdSectionData>({
-    visao_geral: '',
-    escopo: '',
-    personas: '',
-    requisitos_funcionais: '',
-    requisitos_nao_funcionais: '',
-    design_ux: '',
-    fluxo_usuario: '',
-    metricas_sucesso: '',
-    dependencias_riscos: '',
-    questoes_abertas: ''
-  });
-
-  // [NOVO] Estado para rastrear quais seções já foram extraídas
-  const [extractedSections, setExtractedSections] = useState<Set<string>>(new Set());
+  
+  // Use props para rastrear qual seção está sendo discutida e dados acumulados
+  const currentSectionIndex = currentSectionIndexProp;
+  const setCurrentSectionIndex = setCurrentSectionIndexProp;
+  const prdSectionData = prdSectionDataProp;
+  const setPrdSectionData = setPrdSectionDataProp;
+  const extractedSections = extractedSectionsProp;
+  const setExtractedSections = setExtractedSectionsProp;
   
   const chatRef = useRef<GeminiChat | null>(null);
   const liveSessionRef = useRef<any>(null);

@@ -2,14 +2,11 @@
 
 ## 1. Stack de Tecnologia Principal (Tech Stack)
 O código gerado deve ser estritamente compatível com esta stack:
-- **Framework:** Next.js 16 (App Router)
-- **Linguagem:** TypeScript (Strict Mode)
-- **React:** React 19 (Componentes Funcionais com Hooks)
-- **Estilização:** Tailwind CSS 4
-- **Componentes de UI:** shadcn/ui. Use componentes de `@/components/ui` sempre que possível.
-- **Backend e Autenticação:** Supabase, usando o pacote `@supabase/ssr`.
-- **Formulários:** React Hook Form com Zod para validação de schemas.
-- **Armazenamento:** Supabase Storage configurado para usar um bucket AWS S3.
+Build Tool / Framework: Vite
+Biblioteca Principal: React 19 (com Hooks)
+Linguagem: TypeScript
+Estilização: Tailwind CSS
+Backend / IA: Google Gemini API
 
 ## 2. Padrões de Arquitetura
 - **Multi-Tenancy:** A arquitetura é multi-tenant. A maioria das tabelas de negócio DEVE conter uma coluna `workspace_id` para ser usada com Row Level Security (RLS).

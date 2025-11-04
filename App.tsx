@@ -10,6 +10,7 @@ import TechStackSelector from './components/TechStackSelector';
 import Button from './components/Button';
 import OutputView from './components/OutputView';
 import Chat from './components/Chat';
+import PrdSummaryPanel from './components/PrdSummaryPanel';
 import ProgressBar from './components/ProgressBar';
 import { SparklesIcon } from './components/icons';
 
@@ -43,6 +44,22 @@ const App: React.FC = () => {
   });
   
   const [generatedOutput, setGeneratedOutput] = useState<GeneratedOutput | null>(null);
+  
+  // Estados para gerenciar extração incremental de seções
+  const [prdSectionData, setPrdSectionData] = useState<PrdSectionData>({
+    visao_geral: '',
+    escopo: '',
+    personas: '',
+    requisitos_funcionais: '',
+    requisitos_nao_funcionais: '',
+    design_ux: '',
+    fluxo_usuario: '',
+    metricas_sucesso: '',
+    dependencias_riscos: '',
+    questoes_abertas: '',
+  });
+  const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
+  const [extractedSections, setExtractedSections] = useState<Set<string>>(new Set());
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -176,33 +193,64 @@ const App: React.FC = () => {
         )}
 
         {currentStep === 3 && (
-          <div className="space-y-8">
-            <Card 
-              title="Conteúdo do PRD" 
-              description={isPrdContentComplete 
-                ? "✅ Conteúdo do PRD preenchido via chat!" 
-                : "Converse com nosso assistente para preencher os detalhes do PRD."}
-            >
-              <Chat 
-                onPrdGenerationComplete={handlePrdGenerationComplete}
-                productName={formData.product_name}
-                mainObjective={formData.main_objective}
-                team={formData.team}
-              />
-               <div className="mt-6 flex justify-between items-center">
-                  <Button type="button" onClick={prevStep} className="bg-transparent hover:bg-gray-700 text-gray-300">
-                      &larr; Voltar
-                  </Button>
-                  <form onSubmit={handleSubmit} className="flex gap-2">
-                    {isPrdContentComplete && (
-                      <Button type="submit" isLoading={isLoading}>
-                        <SparklesIcon className="w-5 h-5 mr-2" />
-                        Gerar PRD e Tarefas
-                      </Button>
-                    )}
-                  </form>
+          <div className="h-[calc(100vh-300px)] flex flex-col">
+            <div className="flex gap-4 flex-1 overflow-hidden">
+              {/* Left Panel - Chat (33%) */}
+              <div className="w-1/3 bg-gray-800 rounded-lg p-4 flex flex-col overflow-hidden border border-gray-700">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    💬 Chat PRD
+                  </h3>
+                  <p className="text-sm text-gray-400 mt-1">Converse para preencher cada seção</p>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <Chat 
+                    onPrdGenerationComplete={handlePrdGenerationComplete}
+                    productName={formData.product_name}
+                    mainObjective={formData.main_objective}
+                    team={formData.team}
+                    prdSectionData={prdSectionData}
+                    setPrdSectionData={setPrdSectionData}
+                    currentSectionIndex={currentSectionIndex}
+                    setCurrentSectionIndex={setCurrentSectionIndex}
+                    extractedSections={extractedSections}
+                    setExtractedSections={setExtractedSections}
+                  />
+                </div>
               </div>
-            </Card>
+
+              {/* Right Panel - PRD Summary (66%) */}
+              <div className="w-2/3 bg-gray-800 rounded-lg p-4 flex flex-col overflow-hidden border border-gray-700">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    📄 Resumo do PRD
+                  </h3>
+                  <p className="text-sm text-gray-400 mt-1">Seções extraídas em tempo real</p>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <PrdSummaryPanel 
+                    prdData={prdSectionData}
+                    currentSectionIndex={currentSectionIndex}
+                    extractedCount={extractedSections.size}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="mt-6 flex justify-between items-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <Button type="button" onClick={prevStep} className="bg-transparent hover:bg-gray-700 text-gray-300">
+                &larr; Voltar
+              </Button>
+              <form onSubmit={handleSubmit} className="flex gap-2">
+                {isPrdContentComplete && (
+                  <Button type="submit" isLoading={isLoading}>
+                    <SparklesIcon className="w-5 h-5 mr-2" />
+                    Gerar PRD e Tarefas
+                  </Button>
+                )}
+              </form>
+            </div>
           </div>
         )}
         
