@@ -23,15 +23,11 @@ MÉTODO DE INTERAÇÃO:
 
     Para cada seção, o ProductBuddy solicita as informações necessárias (ex: para a "Visão Geral", pede o "porquê" da iniciativa). Oferece exemplos e estrutura se o usuário pedir ajuda.
 
-    Ao final de cada seção preenchida, ProductBuddy:
+    Seu único papel no chat é fazer perguntas para coletar as informações de cada seção do PRD de forma conversacional. NÃO FAÇA RESUMOS no chat. O resumo aparecerá automaticamente em outro painel para o usuário.
 
-        Resume o que foi entendido em um texto claro e bem estruturado.
+    Após sentir que coletou informação suficiente para uma seção, pergunte de forma direta e simples se o usuário está pronto para validar e prosseguir. Exemplo: "Temos o suficiente para a seção de Personas? Podemos validar e passar para a próxima?"
 
-        Sugere melhorias, como: adicionar clareza, conectar com o objetivo geral ou usar frameworks (ex: templates de User Story, formato de hipótese para métricas).
-
-        Pergunta de forma colaborativa: "O que você acha desta seção? Atende ao que você tinha em mente ou há algo que gostaria de refinar, adicionar ou remover?"
-
-    Quando a seção é validada, o ProductBuddy apresenta o PRD completo no estado atual e passa para a próxima seção da lista:
+    Quando o usuário confirmar que quer validar, o ProductBuddy passa para a próxima seção da lista:
 
         Visão Geral
 
@@ -53,13 +49,11 @@ MÉTODO DE INTERAÇÃO:
 
         Questões em Aberto
 
-        Anexos / Observações
-
 DESVIOS POSSÍVEIS:
 
     Se o usuário solicitar um resumo, o Agente Gemini (ProductBuddy) deve gerar a versão atual do PRD com as seções já preenchidas.
 
-    Se o usuário quiser reescrever uma seção, o Agente Gemini (ProductBuddy) deve reabrir apenas aquela parte e voltar ao passo 4.
+    Se o usuário quiser reescrever uma seção, o Agente Gemini (ProductBuddy) deve reabrir apenas aquela parte e voltar ao passo anterior.
 
     Se o usuário quiser exportar, o Agente Gemini (ProductBuddy) deve gerar o PRD em formato Markdown ou outro solicitado.
 
@@ -77,19 +71,7 @@ Se o usuário responder de forma vaga, ProductBuddy deve:
 
 FORMATO:
 
-A cada validação de seção, o PRD completo deve ser reapresentado no estado atual, para que o usuário tenha uma visão contínua do progresso.
-
-    Seção Preenchida:
-    Nome da Seção
-
-    [texto gerado com base na resposta do usuário]
-
-    Seção Não Preenchida:
-    Nome da Seção
-
-    🚧 Em construção
-
-Ao final do processo, o PRD completo deve ser exibido de forma limpa, com opção de exportar.
+O painel de resumo (PRD Summary) será atualizado automaticamente com as seções validadas. Seu foco deve ser apenas na coleta conversacional de dados, não na apresentação de resumos.
 `;
 
 interface ChatProps {
@@ -141,6 +123,7 @@ const Chat: React.FC<ChatProps> = ({
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [recordingError, setRecordingError] = useState<string>('');
   const [isChatReady, setIsChatReady] = useState(false);
+  const [isNewSectionTurn, setIsNewSectionTurn] = useState(true);
   
   // Use props para rastrear qual seção está sendo discutida e dados acumulados
   const currentSectionIndex = currentSectionIndexProp;
@@ -170,6 +153,7 @@ const Chat: React.FC<ChatProps> = ({
     if (currentSectionIndex < SECTION_NAMES.length - 1) {
       const nextIndex = currentSectionIndex + 1;
       setCurrentSectionIndex(nextIndex);
+      setIsNewSectionTurn(true);
       
       const currentSectionName = SECTION_NAMES[currentSectionIndex];
       const nextSectionName = SECTION_NAMES[nextIndex];
@@ -275,6 +259,54 @@ const Chat: React.FC<ChatProps> = ({
 
   const sendMessage = async (message: string) => {
     if (!chatRef.current || !message.trim() || isLoading) return;
+
+    // [GUARDA DE SEGURANÇA] Ignorar validação no primeiro turno de uma nova seção
+    if (isNewSectionTurn) {
+      setIsNewSectionTurn(false);
+      console.log('🔒 Primeiro turno da nova seção, validação ignorada.');
+      
+      setIsLoading(true);
+      setUserInput('');
+
+      const userMessage: ChatMessage = { 
+        id: `user-${Date.now()}`,
+        role: 'user', 
+        content: message 
+      };
+      
+      const assistantMessageId = `model-${Date.now()}`;
+      const modelPlaceholder: ChatMessage = { 
+          id: assistantMessageId,
+          role: 'model', 
+          content: ''
+      };
+      
+      setMessages(prev => [...prev, userMessage, modelPlaceholder]);
+      
+      try {
+        const responseStream = await chatRef.current.sendMessageStream({ message });
+        
+        let accumulatedResponse = '';
+        for await (const chunk of responseStream) {
+          accumulatedResponse += chunk.text;
+          setMessages(currentMessages => {
+              const newMessages = [...currentMessages];
+              const lastIndex = newMessages.length - 1;
+              if (lastIndex >= 0 && newMessages[lastIndex].id === assistantMessageId) {
+                newMessages[lastIndex] = { ...newMessages[lastIndex], content: accumulatedResponse };
+              }
+              return newMessages;
+          });
+        }
+        
+        setMessages(currentMessages => [...currentMessages]);
+      } catch (error) {
+        console.error('❌ Erro ao enviar mensagem:', error);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     setIsLoading(true);
     setUserInput('');
