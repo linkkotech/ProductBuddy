@@ -131,7 +131,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-6xl mx-auto">
         <header className="text-center mb-10">
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white flex items-center justify-center gap-3">
             ProductBuddy AI <span className="text-yellow-400">✨</span>
